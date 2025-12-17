@@ -221,9 +221,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemCount: _featuredProducts.length,
                           itemBuilder: (context, index) {
                             return ProductCard(
-                              imageUrl: _featuredProducts[index]['image'] as String,
+                              imageUrl:
+                                  _featuredProducts[index]['image'] as String,
                               name: _featuredProducts[index]['name'] as String,
-                              price: _featuredProducts[index]['price'] as String,
+                              price:
+                                  _featuredProducts[index]['price'] as String,
                               onTap: () {
                                 // Product tap action
                               },
@@ -287,4 +289,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

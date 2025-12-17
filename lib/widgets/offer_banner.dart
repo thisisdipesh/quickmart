@@ -90,7 +90,7 @@ class _OfferBannerState extends State<OfferBanner> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: const Color.fromRGBO(255, 255, 255, 0.9),
                                 ),
                               ),
                             ],
@@ -113,12 +113,12 @@ class _OfferBannerState extends State<OfferBanner> {
                               bottomRight: Radius.circular(20),
                             ),
                             child: Container(
-                              color: Colors.white.withOpacity(0.1),
+                              color: const Color.fromRGBO(255, 255, 255, 0.1),
                               child: Center(
                                 child: Icon(
                                   _getIconForOffer(offer['image']),
                                   size: 100,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: const Color.fromRGBO(255, 255, 255, 0.8),
                                 ),
                               ),
                             ),
