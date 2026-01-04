@@ -47,6 +47,7 @@ class _FeaturedProductsListState extends State<FeaturedProductsList> {
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailPage(
+          productId: product['_id'] as String?,
           productName: product['name'] as String?,
           productPrice: product['price'] != null
               ? 'Rs ${(product['price'] as num).toStringAsFixed(0)}'

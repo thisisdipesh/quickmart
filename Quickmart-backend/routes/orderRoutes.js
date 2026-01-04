@@ -5,6 +5,7 @@ const {
   getAllOrders,
   getOrderById,
   getMyOrders,
+  getMyOrdersWithFilter,
   updateOrderStatus,
   updateOrderStatusOnly,
   deleteOrder,
@@ -17,6 +18,9 @@ router.post('/', protect, validate('createOrder'), createOrder);
 
 // @route   GET /api/orders/user/my-orders
 router.get('/user/my-orders', protect, getMyOrders);
+
+// @route   GET /api/orders/my
+router.get('/my', protect, getMyOrdersWithFilter);
 
 // @route   GET /api/orders
 router.get('/', protect, authorize('admin'), getAllOrders);

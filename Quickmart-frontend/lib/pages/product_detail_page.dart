@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../widgets/quantity_selector.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/review_section.dart';
+import '../services/cart_service.dart';
+import '../pages/cart_page.dart';
 
 class ProductDetailPage extends StatefulWidget {
+  final String? productId;
   final String? productName;
   final String? productPrice;
   final String? productImage;
@@ -14,6 +19,7 @@ class ProductDetailPage extends StatefulWidget {
 
   const ProductDetailPage({
     super.key,
+    this.productId,
     this.productName,
     this.productPrice,
     this.productImage,
@@ -273,6 +279,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             },
                           ),
 
+                          const SizedBox(height: 32),
+
+                          // Reviews Section
+                          ReviewSection(
+                            productId: widget.productId ?? 'unknown',
+                            currentRating: rating,
+                            reviewCount: reviewCount,
+                          ),
+
                           const SizedBox(
                               height: 100), // Space for bottom button
                         ],
@@ -286,7 +301,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
       ),
 
-      // Bottom Buy Now Button
+      // Bottom Add to Cart Button and Cart Icon
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -300,21 +315,103 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ],
         ),
         child: SafeArea(
-          child: CustomButton(
-            text: 'Buy Now',
-            onPressed: () {
-              // Handle buy now action
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Added $_quantity item(s) to cart',
-                    style: GoogleFonts.poppins(),
-                  ),
-                  backgroundColor: const Color(0xFF6F52ED),
-                  behavior: SnackBarBehavior.floating,
+          child: Row(
+            children: [
+              // Add to Cart Button
+              Expanded(
+                child: CustomButton(
+                  text: 'Add to Cart',
+                  onPressed: inStock
+                      ? () {
+                          final cartService = Provider.of<CartService>(context, listen: false);
+                          final productId = widget.productId ?? 
+                              DateTime.now().millisecondsSinceEpoch.toString();
+                          
+                          cartService.addToCart(
+                            productId: productId,
+                            productName: productName,
+                            productImage: productImage,
+                            price: productPrice,
+                            quantity: _quantity,
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Added $_quantity item(s) to cart',
+                                style: GoogleFonts.poppins(),
+                              ),
+                              backgroundColor: const Color(0xFF6F52ED),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      : null,
+                  backgroundColor: inStock ? const Color(0xFF6F52ED) : Colors.grey.shade400,
                 ),
-              );
-            },
+              ),
+              const SizedBox(width: 12),
+              // Cart Icon Button
+              Container(
+                width: 55,
+                height: 55,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6F52ED),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CartPage(),
+                      ),
+                    );
+                  },
+                  icon: Stack(
+                    children: [
+                      const Icon(
+                        Icons.shopping_cart,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      // Cart item count badge
+                      Consumer<CartService>(
+                        builder: (context, cartService, child) {
+                          if (cartService.itemCount > 0) {
+                            return Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  cartService.itemCount.toString(),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

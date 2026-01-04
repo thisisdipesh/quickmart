@@ -13,13 +13,19 @@ class AuthService {
     }
   }
 
-  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+  static Future<Map<String, dynamic>> register(String name, String email, String password, {String? phone}) async {
     try {
-      final response = await ApiService.post('auth/register', {
+      final requestBody = {
         'name': name,
         'email': email,
         'password': password,
-      });
+      };
+      
+      if (phone != null && phone.isNotEmpty) {
+        requestBody['phone'] = phone;
+      }
+      
+      final response = await ApiService.post('auth/register', requestBody);
       return response;
     } catch (e) {
       rethrow;

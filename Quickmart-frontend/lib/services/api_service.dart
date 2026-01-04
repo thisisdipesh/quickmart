@@ -49,12 +49,30 @@ class ApiService {
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body);
-    
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body;
-    } else {
-      throw Exception(body['message'] ?? 'Something went wrong');
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return body;
+      } else {
+        // Extract error message from response
+        String errorMessage = 'Something went wrong';
+        if (body.containsKey('message')) {
+          errorMessage = body['message'] as String;
+        } else if (body.containsKey('errors') && body['errors'] is List) {
+          final errors = body['errors'] as List;
+          if (errors.isNotEmpty) {
+            errorMessage = errors.first.toString();
+          }
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      // If JSON parsing fails or other error
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to parse server response');
     }
   }
 }

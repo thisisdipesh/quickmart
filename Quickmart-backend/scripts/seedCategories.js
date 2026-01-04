@@ -71,3 +71,5 @@ const seedCategories = async () => {
 
 seedCategories();
 
+
+

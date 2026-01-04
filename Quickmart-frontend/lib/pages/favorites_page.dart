@@ -44,6 +44,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailPage(
+          productId: product['id'] as String?,
           productName: product['name'] as String?,
           productPrice: product['price'] as String?,
           productImage: product['image'] as String?,

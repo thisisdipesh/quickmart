@@ -107,6 +107,8 @@ export const ordersAPI = {
     api.get(`/orders/${id}`),
   updateStatus: (id, orderData) =>
     api.put(`/orders/${id}`, orderData),
+  updateStatusOnly: (id, status) =>
+    api.patch(`/admin/orders/${id}/status`, { status }),
   delete: (id) =>
     api.delete(`/orders/${id}`),
 };

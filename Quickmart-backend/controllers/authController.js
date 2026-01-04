@@ -15,8 +15,11 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
 
+    // Normalize email to lowercase (consistent with User schema)
+    const normalizedEmail = email ? email.toLowerCase().trim() : null;
+
     // Check if user exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({
@@ -28,7 +31,7 @@ exports.register = async (req, res) => {
     // Create user
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
       phone,
       role: role || 'customer',
@@ -75,8 +78,11 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Normalize email to lowercase (consistent with User schema)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
     if (!user) {
       return res.status(401).json({

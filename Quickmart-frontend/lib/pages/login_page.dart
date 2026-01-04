@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../screens/home_screen.dart';
 import '../admin/admin_main.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -37,15 +38,21 @@ class _LoginPageState extends State<LoginPage> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        final response = await AuthService.login(
-          _emailController.text,
-          _passwordController.text,
-        );
+        // Normalize email to lowercase (backend stores emails in lowercase)
+        final email = _emailController.text.trim().toLowerCase();
+        final password = _passwordController.text;
 
-        // Save user data
-        final userName = response['user']?['name'] as String?;
-        final userEmail = response['user']?['email'] as String?;
-        UserService.setUserData(userName, userEmail);
+        final response = await AuthService.login(email, password);
+
+        // Save user data - Backend returns data in response['data']['user']
+        final userData = response['data']?['user'] ?? response['user'];
+        final userName = userData?['name'] as String?;
+        final userEmail = userData?['email'] as String?;
+        final token = response['data']?['token'] as String?;
+        await UserService.setUserData(userName, userEmail, token: token);
+
+        // Force reload to ensure data is in memory
+        await UserService.reload();
 
         // Hide loading indicator
         if (mounted) Navigator.pop(context);
@@ -63,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
           );
 
           // Navigate based on user role
-          final userRole = response['user']?['role'] ?? 'customer';
+          final userRole = userData?['role'] ?? 'customer';
           if (userRole == 'admin') {
             // Navigate to admin panel
             Navigator.of(context).pushReplacement(
@@ -85,14 +92,22 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) Navigator.pop(context);
 
         if (mounted) {
+          String errorMessage = 'An error occurred';
+          if (e is Exception) {
+            errorMessage = e.toString().replaceAll('Exception: ', '');
+          } else {
+            errorMessage = e.toString();
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                e.toString().replaceAll('Exception: ', ''),
+                errorMessage,
                 style: GoogleFonts.poppins(),
               ),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -102,28 +117,10 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleSignUp() {
     // Navigate to sign up page
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Navigate to Sign Up page',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: const Color(0xFF6F52ED),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _handleForgotPassword() {
-    // Handle forgot password
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Forgot Password clicked',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: const Color(0xFF6F52ED),
-        behavior: SnackBarBehavior.floating,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RegisterPage(),
       ),
     );
   }
@@ -297,24 +294,6 @@ class _LoginPageState extends State<LoginPage> {
                           }
                           return null;
                         },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Forgot Password
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: _handleForgotPassword,
-                          child: Text(
-                            'Forgot Password?',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF6F52ED),
-                            ),
-                          ),
-                        ),
                       ),
 
                       const SizedBox(height: 32),

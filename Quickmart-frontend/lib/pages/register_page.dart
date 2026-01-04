@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/custom_button.dart';
+import '../services/auth_service.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -12,47 +14,103 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _agreeToTerms = false;
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      if (!_agreeToTerms) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Please agree to Terms and Conditions',
-              style: GoogleFonts.poppins(),
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-          ),
+      try {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
-        return;
+
+        // Combine first name and last name
+        final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
+        
+        // Normalize email to lowercase (backend stores emails in lowercase)
+        final email = _emailController.text.trim().toLowerCase();
+        final password = _passwordController.text;
+        
+        // Call registration API
+        final response = await AuthService.register(
+          fullName,
+          email,
+          password,
+          phone: _phoneController.text.trim().isNotEmpty 
+              ? _phoneController.text.trim() 
+              : null,
+        );
+        
+        // Verify registration was successful
+        if (response['success'] != true) {
+          throw Exception(response['message'] ?? 'Registration failed');
+        }
+
+        // Optionally save token and user data if auto-login is desired
+        // For now, we'll just navigate to login page
+        // User can login with their credentials
+
+        // Hide loading indicator
+        if (mounted) Navigator.pop(context);
+
+        if (mounted) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Registration successful! Please login.',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: const Color(0xFF6F52ED),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
+          // Navigate to login page after a short delay
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const LoginPage(),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Hide loading indicator
+        if (mounted) Navigator.pop(context);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                e.toString().replaceAll('Exception: ', ''),
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
-      // Handle registration logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Registration successful!',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: const Color(0xFF6F52ED),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 
@@ -61,19 +119,6 @@ class _RegisterPageState extends State<RegisterPage> {
     Navigator.of(context).pop();
   }
 
-  void _handleTermsAndConditions() {
-    // Handle terms and conditions navigation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Terms and Conditions',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: const Color(0xFF6F52ED),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,11 +211,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   // Input Fields Section
                   Column(
                     children: [
-                      // Full Name Field
+                      // First Name Field
                       CustomInputField(
+                        key: const ValueKey('first_name_field'),
                         label: '',
-                        hintText: 'Full name',
-                        controller: _fullNameController,
+                        hintText: 'First name',
+                        controller: _firstNameController,
                         showLabel: false,
                         backgroundColor: const Color(0xFFF3F3F3),
                         prefixIcon: Icon(
@@ -180,7 +226,30 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your full name';
+                            return 'Please enter your first name';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Last Name Field
+                      CustomInputField(
+                        key: const ValueKey('last_name_field'),
+                        label: '',
+                        hintText: 'Last name',
+                        controller: _lastNameController,
+                        showLabel: false,
+                        backgroundColor: const Color(0xFFF3F3F3),
+                        prefixIcon: Icon(
+                          Icons.person_outline,
+                          color: Colors.grey.shade600,
+                          size: 22,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your last name';
                           }
                           return null;
                         },
@@ -190,6 +259,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       // Email Field
                       CustomInputField(
+                        key: const ValueKey('email_field'),
                         label: '',
                         hintText: 'Valid email',
                         controller: _emailController,
@@ -216,6 +286,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       // Phone Number Field
                       CustomInputField(
+                        key: const ValueKey('phone_field'),
                         label: '',
                         hintText: 'Phone number',
                         controller: _phoneController,
@@ -242,6 +313,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       // Password Field
                       CustomInputField(
+                        key: const ValueKey('password_field'),
                         label: '',
                         hintText: 'Strong Password',
                         controller: _passwordController,
@@ -262,59 +334,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           }
                           return null;
                         },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Terms & Conditions Checkbox
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Checkbox(
-                            value: _agreeToTerms,
-                            onChanged: (value) {
-                              setState(() {
-                                _agreeToTerms = value ?? false;
-                              });
-                            },
-                            activeColor: const Color(0xFF6F52ED),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: RichText(
-                                text: TextSpan(
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                  children: [
-                                    const TextSpan(
-                                        text:
-                                            'By checking the box you agree to our '),
-                                    WidgetSpan(
-                                      child: GestureDetector(
-                                        onTap: _handleTermsAndConditions,
-                                        child: Text(
-                                          'Terms and Conditions.',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF6F52ED),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
 
                       const SizedBox(height: 32),

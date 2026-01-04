@@ -1,60 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../widgets/cart_item_card.dart';
 import '../widgets/custom_button.dart';
+import '../services/cart_service.dart';
+import '../services/user_service.dart';
+import 'login_page.dart';
+import 'checkout_page.dart';
 
-class CartPage extends StatefulWidget {
+class CartPage extends StatelessWidget {
   const CartPage({super.key});
 
-  @override
-  State<CartPage> createState() => _CartPageState();
-}
-
-class _CartPageState extends State<CartPage> {
-  // Cart items data
-  final List<Map<String, dynamic>> _cartItems = [
-    {
-      'id': '1',
-      'name': 'Feel Pure Body Moisturizer',
-      'price': 'Rs 400',
-      'quantity': 2,
-      'image': 'https://via.placeholder.com/80x80?text=Moisturizer',
-    },
-    {
-      'id': '2',
-      'name': 'Jimbu Rice',
-      'price': 'Rs 3100',
-      'quantity': 2,
-      'image': 'https://via.placeholder.com/80x80?text=Rice',
-    },
-    {
-      'id': '3',
-      'name': 'Ground Turmeric',
-      'price': 'Rs 530',
-      'quantity': 2,
-      'image': 'https://via.placeholder.com/80x80?text=Turmeric',
-    },
-  ];
-
   // Order summary calculations
-  int get _itemCount => _cartItems.length;
-  int get _subtotal =>
-      5030; // Rs 400 + Rs 3100 + Rs 530 = Rs 4030, but design shows 5030
-  int get _discount => 130;
-  int get _deliveryCharges => 9;
-  int get _total => _subtotal - _discount + _deliveryCharges;
-
-  void _handleQuantityChanged(String itemId, int newQuantity) {
-    setState(() {
-      final item = _cartItems.firstWhere((item) => item['id'] == itemId);
-      item['quantity'] = newQuantity;
-    });
+  double _calculateSubtotal(CartService cartService) {
+    return cartService.getTotalPrice();
   }
 
-  void _handleDeleteItem(String itemId) {
-    setState(() {
-      _cartItems.removeWhere((item) => item['id'] == itemId);
-    });
+  int get _discount => 130;
+  int get _deliveryCharges => 9;
+
+  double _calculateTotal(CartService cartService) {
+    return _calculateSubtotal(cartService) - _discount + _deliveryCharges;
+  }
+
+  void _handleQuantityChanged(CartService cartService, String itemId, int newQuantity) {
+    cartService.updateQuantity(itemId, newQuantity);
+  }
+
+  void _handleDeleteItem(CartService cartService, String itemId, BuildContext context) {
+    cartService.removeFromCart(itemId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -67,21 +41,68 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  void _handleCheckOut() {
-    // Handle checkout logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Proceeding to checkout...',
-          style: GoogleFonts.poppins(),
+  Future<void> _handleCheckOut(BuildContext context) async {
+    // Ensure initialization and check if user is logged in
+    await UserService.ensureInitialized();
+    if (!UserService.isLoggedIn()) {
+      // Show dialog to redirect to login
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Login Required',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'You must be logged in to checkout. Please login or create an account to continue.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              },
+              child: Text(
+                'Login',
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF6F52ED),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: const Color(0xFF6F52ED),
-        behavior: SnackBarBehavior.floating,
+      );
+      return;
+    }
+
+    // User is logged in, proceed with checkout
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CheckoutPage(),
       ),
     );
   }
 
-  void _handleMenuTap() {
+  void _handleMenuTap(CartService cartService, BuildContext context) {
     // Handle menu tap
     showModalBottomSheet(
       context: context,
@@ -98,9 +119,7 @@ class _CartPageState extends State<CartPage> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                setState(() {
-                  _cartItems.clear();
-                });
+                cartService.clearCart();
               },
             ),
             ListTile(
@@ -119,7 +138,14 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<CartService>(
+      builder: (context, cartService, child) {
+        final cartItems = cartService.cartItems;
+        final itemCount = cartService.itemCount;
+        final subtotal = _calculateSubtotal(cartService);
+        final total = _calculateTotal(cartService);
+
+        return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: Column(
@@ -157,7 +183,7 @@ class _CartPageState extends State<CartPage> {
                   ),
                   // Vertical 3-dot menu
                   IconButton(
-                    onPressed: _handleMenuTap,
+                    onPressed: () => _handleMenuTap(cartService, context),
                     icon: Icon(
                       Icons.more_vert,
                       color: Colors.grey.shade800,
@@ -170,7 +196,7 @@ class _CartPageState extends State<CartPage> {
 
             // Cart Items List
             Expanded(
-              child: _cartItems.isEmpty
+              child: cartItems.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -195,17 +221,17 @@ class _CartPageState extends State<CartPage> {
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
                       child: Column(
-                        children: _cartItems.map((item) {
+                        children: cartItems.map((item) {
                           return CartItemCard(
-                            imageUrl: item['image'] as String,
-                            productName: item['name'] as String,
-                            price: item['price'] as String,
-                            quantity: item['quantity'] as int,
+                            imageUrl: item['image'] as String? ?? '',
+                            productName: item['name'] as String? ?? '',
+                            price: item['price'] as String? ?? 'Rs 0',
+                            quantity: item['quantity'] as int? ?? 1,
                             onDelete: () =>
-                                _handleDeleteItem(item['id'] as String),
+                                _handleDeleteItem(cartService, item['id'] as String, context),
                             onQuantityChanged: (newQuantity) =>
                                 _handleQuantityChanged(
-                                    item['id'] as String, newQuantity),
+                                    cartService, item['id'] as String, newQuantity),
                           );
                         }).toList(),
                       ),
@@ -213,7 +239,7 @@ class _CartPageState extends State<CartPage> {
             ),
 
             // Order Summary Section
-            if (_cartItems.isNotEmpty)
+            if (cartItems.isNotEmpty)
               Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(20),
@@ -247,11 +273,11 @@ class _CartPageState extends State<CartPage> {
                     const SizedBox(height: 16),
 
                     // Items
-                    _buildSummaryRow('Items', '$_itemCount', false),
+                    _buildSummaryRow('Items', '$itemCount', false),
                     const SizedBox(height: 12),
 
                     // Subtotal
-                    _buildSummaryRow('Subtotal', 'Rs $_subtotal', false),
+                    _buildSummaryRow('Subtotal', 'Rs ${subtotal.toStringAsFixed(0)}', false),
                     const SizedBox(height: 12),
 
                     // Discount
@@ -271,18 +297,18 @@ class _CartPageState extends State<CartPage> {
                     const SizedBox(height: 16),
 
                     // Total
-                    _buildSummaryRow('Total', 'Rs $_total', true),
+                    _buildSummaryRow('Total', 'Rs ${total.toStringAsFixed(0)}', true),
                   ],
                 ),
               ),
 
             // Check Out Button
-            if (_cartItems.isNotEmpty)
+            if (cartItems.isNotEmpty)
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: CustomButton(
                   text: 'Check Out',
-                  onPressed: _handleCheckOut,
+                  onPressed: () => _handleCheckOut(context),
                   height: 55,
                   borderRadius: 30,
                   backgroundColor: const Color(0xFF6F52ED),
@@ -291,6 +317,8 @@ class _CartPageState extends State<CartPage> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 

@@ -26,7 +26,7 @@ const Orders = () => {
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      await ordersAPI.updateStatus(orderId, { orderStatus: newStatus });
+      await ordersAPI.updateStatusOnly(orderId, newStatus);
       fetchOrders();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update order status');
@@ -59,6 +59,12 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     const colors = {
+      placed: 'bg-yellow-100 text-yellow-800',
+      gathering: 'bg-blue-100 text-blue-800',
+      picked: 'bg-purple-100 text-purple-800',
+      on_the_way: 'bg-indigo-100 text-indigo-800',
+      delivered: 'bg-green-100 text-green-800',
+      // Legacy support
       Pending: 'bg-yellow-100 text-yellow-800',
       Processing: 'bg-blue-100 text-blue-800',
       Shipped: 'bg-purple-100 text-purple-800',
@@ -66,6 +72,17 @@ const Orders = () => {
       Cancelled: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      placed: 'Order Placed',
+      gathering: 'Gathering Items',
+      picked: 'Picked Up',
+      on_the_way: 'On The Way',
+      delivered: 'Delivered',
+    };
+    return labels[status] || status;
   };
 
   const getPaymentStatusColor = (status) => {
@@ -194,17 +211,17 @@ const Orders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
-                        value={order.orderStatus}
+                        value={order.orderStatus || 'placed'}
                         onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
                         className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(
                           order.orderStatus
                         )}`}
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
+                        <option value="placed">Order Placed</option>
+                        <option value="gathering">Gathering Items</option>
+                        <option value="picked">Picked Up</option>
+                        <option value="on_the_way">On The Way</option>
+                        <option value="delivered">Delivered</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -358,7 +375,7 @@ const Orders = () => {
                         selectedOrder.orderStatus
                       )}`}
                     >
-                      {selectedOrder.orderStatus}
+                      {getStatusLabel(selectedOrder.orderStatus)}
                     </span>
                   </div>
                 </div>
@@ -372,4 +389,6 @@ const Orders = () => {
 };
 
 export default Orders;
+
+
 

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickMart - Admin Orders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #6F52ED 0%, #8B6FF7 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-section.hidden {
+            display: none;
+        }
+
+        input, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        button {
+            background: #6F52ED;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5a42d4;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .flex {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .orders-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .refresh-btn {
+            background: #28a745;
+        }
+
+        .refresh-btn:hover {
+            background: #218838;
+        }
+
+        .order-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .order-id {
+            font-weight: 600;
+            color: #6F52ED;
+            font-size: 16px;
+        }
+
+        .order-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-placed {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .status-gathering {
+            background: #74b9ff;
+            color: white;
+        }
+
+        .status-picked {
+            background: #a29bfe;
+            color: white;
+        }
+
+        .status-on_the_way {
+            background: #fd79a8;
+            color: white;
+        }
+
+        .status-delivered {
+            background: #00b894;
+            color: white;
+        }
+
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .items-list {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .update-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        .update-btn {
+            background: #17a2b8;
+        }
+
+        .update-btn:hover {
+            background: #138496;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛒 QuickMart Admin</h1>
+            <p class="subtitle">Order Management System</p>
+        </header>
+
+        <div id="authSection" class="auth-section">
+            <h3>Admin Login</h3>
+            <div class="flex" style="margin-top: 15px;">
+                <input type="text" id="adminEmail" placeholder="Admin Email" />
+                <input type="password" id="adminPassword" placeholder="Password" />
+                <button onclick="login()">Login</button>
+            </div>
+            <div id="loginError" class="error" style="display: none; margin-top: 15px;"></div>
+        </div>
+
+        <div id="ordersSection" class="orders-container hidden">
+            <div class="orders-header">
+                <h2>All Orders</h2>
+                <button class="refresh-btn" onclick="loadOrders()">🔄 Refresh</button>
+            </div>
+            <div id="message"></div>
+            <div id="ordersList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let authToken = localStorage.getItem('adminToken');
+
+        // Check if already logged in
+        if (authToken) {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('ordersSection').classList.remove('hidden');
+            loadOrders();
+        }
+
+        async function login() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Please enter email and password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Check if user is admin
+                    if (data.data?.user?.role === 'admin') {
+                        authToken = data.data.token;
+                        localStorage.setItem('adminToken', authToken);
+                        document.getElementById('authSection').classList.add('hidden');
+                        document.getElementById('ordersSection').classList.remove('hidden');
+                        loadOrders();
+                    } else {
+                        errorDiv.textContent = 'Access denied. Admin privileges required.';
+                        errorDiv.style.display = 'block';
+                    }
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please check your connection.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function loadOrders() {
+            const ordersList = document.getElementById('ordersList');
+            ordersList.innerHTML = '<div class="loading">Loading orders...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/orders`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const orders = data.data?.orders || [];
+                    displayOrders(orders);
+                } else {
+                    if (response.status === 401) {
+                        // Token expired, require re-login
+                        localStorage.removeItem('adminToken');
+                        authToken = null;
+                        document.getElementById('authSection').classList.remove('hidden');
+                        document.getElementById('ordersSection').classList.add('hidden');
+                        showMessage('Session expired. Please login again.', 'error');
+                    } else {
+                        ordersList.innerHTML = `<div class="error">${data.message || 'Failed to load orders'}</div>`;
+                    }
+                }
+            } catch (error) {
+                ordersList.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+            }
+        }
+
+        function displayOrders(orders) {
+            const ordersList = document.getElementById('ordersList');
+
+            if (orders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>No orders found</h3>
+                        <p>Orders will appear here once customers place them.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            ordersList.innerHTML = orders.map(order => {
+                const items = order.items || [];
+                const location = order.location || {};
+                const user = order.user || {};
+                const status = order.orderStatus || 'placed';
+
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-id">Order #${order._id.substring(0, 8)}</div>
+                            <span class="order-status status-${status}">${formatStatus(status)}</span>
+                        </div>
+                        
+                        <div class="order-info">
+                            <div class="info-item">
+                                <span class="info-label">User</span>
+                                <span class="info-value">${user.name || 'N/A'} (${user.email || 'N/A'})</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total</span>
+                                <span class="info-value">Rs ${order.total || 0}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Payment Method</span>
+                                <span class="info-value">${order.paymentMethod || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Location</span>
+                                <span class="info-value">${location.lat ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Date</span>
+                                <span class="info-value">${new Date(order.createdAt).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div class="items-list">
+                            <div class="info-label" style="margin-bottom: 10px;">Items (${items.length})</div>
+                            ${items.map(item => `
+                                <div class="item">
+                                    <span>${item.name || 'Product'} × ${item.quantity}</span>
+                                    <span>Rs ${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="update-section">
+                            <select id="status_${order._id}">
+                                <option value="placed" ${status === 'placed' ? 'selected' : ''}>Placed</option>
+                                <option value="gathering" ${status === 'gathering' ? 'selected' : ''}>Gathering</option>
+                                <option value="picked" ${status === 'picked' ? 'selected' : ''}>Picked</option>
+                                <option value="on_the_way" ${status === 'on_the_way' ? 'selected' : ''}>On The Way</option>
+                                <option value="delivered" ${status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            </select>
+                            <button class="update-btn" onclick="updateOrderStatus('${order._id}')">Update Status</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateOrderStatus(orderId) {
+            const select = document.getElementById(`status_${orderId}`);
+            const newStatus = select.value;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/orders/${orderId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage('Order status updated successfully!', 'success');
+                    loadOrders();
+                } else {
+                    showMessage(data.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function formatStatus(status) {
+            const statusMap = {
+                'placed': 'Placed',
+                'gathering': 'Gathering',
+                'picked': 'Picked',
+                'on_the_way': 'On The Way',
+                'delivered': 'Delivered',
+            };
+            return statusMap[status] || status;
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
+
+

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/user_service.dart';
 import 'login_page.dart';
+import 'my_orders_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,7 +12,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Get user data from UserService
   String get _userName {
     final fullName = UserService.getFullUserName() ?? 'User';
     return fullName;
@@ -21,58 +21,72 @@ class _ProfilePageState extends State<ProfilePage> {
     return UserService.getUserEmail() ?? 'user@quickmart.com';
   }
 
-  String get _firstName {
-    final fullName = UserService.getFullUserName() ?? 'User';
-    final nameParts = fullName.split(' ');
-    return nameParts.isNotEmpty ? nameParts.first : 'User';
-  }
-
-  String get _lastName {
-    final fullName = UserService.getFullUserName() ?? 'User';
-    final nameParts = fullName.split(' ');
-    if (nameParts.length > 1) {
-      return nameParts.sublist(1).join(' ');
-    }
-    return '';
-  }
-
-  void _handleSignOut() {
-    // Clear user data
-    UserService.clearUserData();
+  Future<void> _handleSignOut() async {
+    // Clear user data from persistent storage
+    await UserService.clearUserData();
     
     // Navigate to login page
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      ),
-      (route) => false,
-    );
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(),
+        ),
+        (route) => false,
+      );
+    }
+  }
+
+  void _handleMenuTap(String menuItem) {
+    switch (menuItem) {
+      case 'Order':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MyOrdersPage(),
+          ),
+        );
+        break;
+      case 'Profile':
+        // Already on profile page, do nothing or show edit dialog
+        break;
+      case 'Setting':
+        // Navigate to settings page (if exists) or show placeholder
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Settings page coming soon',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: const Color(0xFF6C63FF),
+          ),
+        );
+        break;
+      case 'Help':
+        // Navigate to help page (if exists) or show placeholder
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Help page coming soon',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: const Color(0xFF6C63FF),
+          ),
+        );
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Profile',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Column(
           children: [
-            // Profile Header
+            // Profile Header Section
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -83,162 +97,134 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
                 children: [
                   // Circular profile image
                   CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.grey.shade200,
+                    radius: 50,
+                    backgroundColor: const Color(0xFF6C63FF).withOpacity(0.1),
                     child: Icon(
                       Icons.person,
-                      size: 40,
+                      size: 50,
+                      color: const Color(0xFF6C63FF),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // User name (bold)
+                  Text(
+                    _userName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // User email (light text)
+                  Text(
+                    _userEmail,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
                       color: Colors.grey.shade600,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // User name
-                  Expanded(
-                    child: Text(
-                      _userName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Profile Form
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Email Field
-                  TextField(
-                    readOnly: true,
-                    controller: TextEditingController(text: _userEmail),
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.black87,
+
+            const SizedBox(height: 24),
+
+            // Menu List Section
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ListView(
+                  children: [
+                    _buildMenuTile(
+                      icon: Icons.person_outline,
+                      title: 'Profile',
+                      onTap: () => _handleMenuTap('Profile'),
                     ),
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      labelStyle: GoogleFonts.poppins(
-                        color: Colors.grey.shade600,
-                      ),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: const Color(0xFF6C63FF),
-                          width: 2,
-                        ),
-                      ),
+                    _buildMenuTile(
+                      icon: Icons.settings_outlined,
+                      title: 'Setting',
+                      onTap: () => _handleMenuTap('Setting'),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // First Name Field
-                  TextField(
-                    readOnly: true,
-                    controller: TextEditingController(text: _firstName),
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.black87,
+                    _buildMenuTile(
+                      icon: Icons.shopping_bag_outlined,
+                      title: 'Order',
+                      onTap: () => _handleMenuTap('Order'),
                     ),
-                    decoration: InputDecoration(
-                      labelText: 'First Name',
-                      labelStyle: GoogleFonts.poppins(
-                        color: Colors.grey.shade600,
-                      ),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: const Color(0xFF6C63FF),
-                          width: 2,
-                        ),
-                      ),
+                    _buildMenuTile(
+                      icon: Icons.help_outline,
+                      title: 'Help',
+                      onTap: () => _handleMenuTap('Help'),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Last Name Field
-                  TextField(
-                    readOnly: true,
-                    controller: TextEditingController(text: _lastName),
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Last Name',
-                      labelStyle: GoogleFonts.poppins(
-                        color: Colors.grey.shade600,
-                      ),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: const Color(0xFF6C63FF),
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 40),
+
             // Sign Out Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton.icon(
-                  onPressed: _handleSignOut,
-                  icon: const Icon(
-                    Icons.logout,
-                    color: Colors.white,
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
                   ),
-                  label: Text(
+                ],
+              ),
+              child: SafeArea(
+                child: TextButton(
+                  onPressed: _handleSignOut,
+                  child: Text(
                     'Sign Out',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Colors.red,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: Colors.black87,
+        size: 24,
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey.shade400,
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+    );
+  }
 }
-
-
-

@@ -33,27 +33,10 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     items: [orderItemSchema],
-    shippingAddress: {
-      name: {
-        type: String,
-        required: true,
-      },
-      phone: {
-        type: String,
-        required: true,
-      },
-      address: {
-        type: String,
-        required: true,
-      },
-      city: {
-        type: String,
-        required: true,
-      },
-      postalCode: {
-        type: String,
-        required: false,
-      },
+    total: {
+      type: Number,
+      required: true,
+      min: 0,
     },
     paymentMethod: {
       type: String,
@@ -61,21 +44,48 @@ const orderSchema = new mongoose.Schema(
       enum: ['Khalti', 'Cash on Delivery', 'Credit Card', 'Debit Card'],
       default: 'Cash on Delivery',
     },
+    location: {
+      lat: {
+        type: Number,
+        required: true,
+      },
+      lng: {
+        type: Number,
+        required: true,
+      },
+    },
+    orderStatus: {
+      type: String,
+      enum: ['placed', 'gathering', 'picked', 'on_the_way', 'delivered'],
+      default: 'placed',
+    },
+    // Keep existing fields for backward compatibility
+    shippingAddress: {
+      name: {
+        type: String,
+        required: false,
+      },
+      phone: {
+        type: String,
+        required: false,
+      },
+      address: {
+        type: String,
+        required: false,
+      },
+      city: {
+        type: String,
+        required: false,
+      },
+      postalCode: {
+        type: String,
+        required: false,
+      },
+    },
     paymentStatus: {
       type: String,
       enum: ['Pending', 'Paid', 'Failed'],
       default: 'Pending',
-    },
-    orderStatus: {
-      type: String,
-      enum: [
-        'Order Placed',
-        'Gathering Items',
-        'Picked Up',
-        'On The Way',
-        'Delivered',
-      ],
-      default: 'Order Placed',
     },
     progress: {
       type: Number,

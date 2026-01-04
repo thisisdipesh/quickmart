@@ -17,6 +17,7 @@ const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Connect to database
 connectDB();
@@ -59,6 +60,9 @@ const limiter = rateLimit({
 });
 
 app.use('/api/', limiter);
+
+// Serve static files from public folder (admin pages)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve static files (uploaded images) - must be before API routes
 // Add CORS middleware specifically for static files
@@ -113,6 +117,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

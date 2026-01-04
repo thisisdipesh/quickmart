@@ -35,19 +35,23 @@ class CustomInputField extends StatefulWidget {
 
 class _CustomInputFieldState extends State<CustomInputField> {
   late bool _obscureText;
-  late TextEditingController _controller;
+  late TextEditingController _internalController;
+  bool _usingInternalController = false;
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.obscureText;
-    _controller = widget.controller ?? TextEditingController();
+    if (widget.controller == null) {
+      _internalController = TextEditingController();
+      _usingInternalController = true;
+    }
   }
 
   @override
   void dispose() {
-    if (widget.controller == null) {
-      _controller.dispose();
+    if (_usingInternalController) {
+      _internalController.dispose();
     }
     super.dispose();
   }
@@ -55,6 +59,8 @@ class _CustomInputFieldState extends State<CustomInputField> {
   @override
   Widget build(BuildContext context) {
     final bgColor = widget.backgroundColor ?? Colors.white;
+    // Always use the passed controller if provided, otherwise use internal one
+    final controller = widget.controller ?? _internalController;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,9 +82,15 @@ class _CustomInputFieldState extends State<CustomInputField> {
         SizedBox(
           height: 55,
           child: TextFormField(
-            controller: _controller,
+            key: widget.key,
+            controller: controller,
             obscureText: widget.obscureText ? _obscureText : false,
             keyboardType: widget.keyboardType ?? TextInputType.text,
+            textInputAction: widget.keyboardType == TextInputType.phone
+                ? TextInputAction.next
+                : widget.obscureText
+                    ? TextInputAction.done
+                    : TextInputAction.next,
             validator: widget.validator,
             onChanged: widget.onChanged,
             style: GoogleFonts.poppins(

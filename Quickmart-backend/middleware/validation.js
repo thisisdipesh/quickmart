@@ -57,28 +57,35 @@ const schemas = {
     items: Joi.array()
       .items(
         Joi.object({
-          product: Joi.string().required(),
-          quantity: Joi.number().integer().min(1).required(),
+          productId: Joi.string().optional(),
+          product: Joi.string().optional(),
+          name: Joi.string().optional(),
           price: Joi.number().min(0).required(),
+          quantity: Joi.number().integer().min(1).required(),
         })
       )
       .min(1)
       .required(),
-    shippingAddress: Joi.object({
-      name: Joi.string().required(),
-      phone: Joi.string().required(),
-      address: Joi.string().required(),
-      city: Joi.string().required(),
-      postalCode: Joi.string().optional(),
-    }).required(),
+    totalAmount: Joi.number().min(0).optional(),
+    total: Joi.number().min(0).optional(),
     paymentMethod: Joi.string()
       .valid('Khalti', 'Cash on Delivery', 'Credit Card', 'Debit Card')
       .optional(),
-    subtotal: Joi.number().min(0).required(),
+    location: Joi.object({
+      lat: Joi.number().required(),
+      lng: Joi.number().required(),
+    }).optional(),
+    shippingAddress: Joi.object({
+      name: Joi.string().optional(),
+      phone: Joi.string().optional(),
+      address: Joi.string().optional(),
+      city: Joi.string().optional(),
+      postalCode: Joi.string().optional(),
+    }).optional(),
+    subtotal: Joi.number().min(0).optional(),
     discount: Joi.number().min(0).optional(),
     deliveryCharges: Joi.number().min(0).optional(),
-    total: Joi.number().min(0).required(),
-  }),
+  }).or('totalAmount', 'total'),
 
   updateOrder: Joi.object({
     orderStatus: Joi.string()
